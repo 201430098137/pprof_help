@@ -2,13 +2,9 @@ package pprof_help
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/pprof"
-	"runtime/trace"
-	"strconv"
-	"time"
 )
 
 type Range struct {
@@ -63,21 +59,22 @@ func SetDebugHandlers(engine *gin.Engine) {
 		pprof.Handler("threadcreate").ServeHTTP(ctx.Writer, ctx.Request)
 	})
 	engine.GET("/debug/pprof/trace", func(ctx *gin.Context) {
-		sec, err := strconv.ParseFloat(ctx.PostForm("seconds"), 64)
-		if sec <= 0 || err != nil {
-			sec = 1
-		}
-		if durationExceedsWriteTimeout(ctx, sec) {
-			ctx.JSON(400, fmt.Errorf("profile duration exceeds server's WriteTimeout"))
-		}
-		buff := ctx.Writer
-		if err := trace.Start(buff); err != nil {
-			// trace.Start failed, so no writes yet.
-			ctx.JSON(400, fmt.Errorf("Could not enable tracing: %s ", err))
-			return
-		}
-		time.Sleep(time.Duration(sec * float64(time.Second)))
-		trace.Stop()
+		pprof.Trace(ctx.Writer, ctx.Request)
+		//sec, err := strconv.ParseFloat(ctx.PostForm("seconds"), 64)
+		//if sec <= 0 || err != nil {
+		//	sec = 1
+		//}
+		//if durationExceedsWriteTimeout(ctx, sec) {
+		//	ctx.JSON(400, fmt.Errorf("profile duration exceeds server's WriteTimeout"))
+		//}
+		//buff := ctx.Writer
+		//if err := trace.Start(buff); err != nil {
+		//	// trace.Start failed, so no writes yet.
+		//	ctx.JSON(400, fmt.Errorf("Could not enable tracing: %s ", err))
+		//	return
+		//}
+		//time.Sleep(time.Duration(sec * float64(time.Second)))
+		//trace.Stop()
 
 		//res, err := ptrace.Parse(&buff, "")
 		//if err != nil {
