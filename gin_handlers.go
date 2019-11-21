@@ -1,10 +1,14 @@
 package pprof_help
 
 import (
+	"bytes"
 	"context"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/pprof"
+	rpprof "runtime/pprof"
+
+	"runtime"
 )
 
 type Range struct {
@@ -57,6 +61,23 @@ func SetDebugHandlers(engine *gin.Engine) {
 	})
 	engine.GET("/debug/pprof/threadcreate", func(ctx *gin.Context) {
 		pprof.Handler("threadcreate").ServeHTTP(ctx.Writer, ctx.Request)
+	})
+	engine.GET("/debug/pprof/allocs", func(ctx *gin.Context) {
+		pprof.Handler("allocs").ServeHTTP(ctx.Writer, ctx.Request)
+	})
+	engine.GET("debug/pprof/memory", func(ctx *gin.Context) {
+		var buff bytes.Buffer
+
+		runtime.GC() // get up-to-date statistics
+		if err := rpprof.WriteHeapProfile(&buff); err != nil {
+			panic(err)
+		}
+		ctx.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+		ctx.Writer.Header().Set("Content-Type", "application/octet-stream")
+		ctx.Writer.Header().Set("Content-Disposition", `attachment; filename="prof.mem"`)
+		if _, err := ctx.Writer.Write(buff.Bytes()); err != nil {
+			panic(err)
+		}
 	})
 	engine.GET("/debug/pprof/trace", func(ctx *gin.Context) {
 		pprof.Trace(ctx.Writer, ctx.Request)
